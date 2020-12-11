@@ -38,7 +38,7 @@ const evaluateRequest = (request:APIGatewayEvent) => {
      requestOrigin = request.requestContext.identity.sourceIp;
   }
   if (requestOrigin !== null && ip == null) {
-    ip = requestOrigin
+    ip = requestOrigin;
   }
 
   return {
