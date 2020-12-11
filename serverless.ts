@@ -30,14 +30,7 @@ const serverlessConfiguration: AWS = {
         {
           http: {
             method: 'get',
-            path: 'check',
-            cors: true
-          }
-        },
-        {
-          http: {
-            method: 'get',
-            path: 'check/{ip}',
+            path: 'check/',
             cors: true,
             request: {
               parameters: {
