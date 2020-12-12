@@ -94,3 +94,10 @@ const validateIp = (ip) => {
 		throw new Error(`invalid IP address ${ip}`);
 	}
 };
+
+// const searchIp = async (ip) => {
+// 	return new Promise<:boolean>((resolve, reject) => {
+// 		if (ip)
+// 		found ? resolve : reject
+// 	})
+// }
