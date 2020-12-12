@@ -1,4 +1,4 @@
-![Dev Deployment](https://github.com/johnweland/ipblock-microservice/workflows/Dev%20Deployment/badge.svg) [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](code_of_conduct.md) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Deployment](https://github.com/johnweland/ipblock-microservice/workflows/Deployment/badge.svg?branch=develop) [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](code_of_conduct.md) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 # ipblock-microservice
 A "cloud native" service in AWS that will check if an IP address exists in a Firehol blocklist
 
