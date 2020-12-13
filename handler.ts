@@ -1,5 +1,15 @@
 import { APIGatewayEvent, APIGatewayProxyHandler } from "aws-lambda";
+import fetch from "node-fetch";
 import "source-map-support/register";
+
+interface File {
+  path: string;
+  mode: string;
+  type: string;
+  sha: string;
+  size: number;
+  url: string;
+}
 
 /**
  * 
@@ -9,30 +19,46 @@ import "source-map-support/register";
  * @returns {json} JSON object with success or error data
  */
 export const ipcheck: APIGatewayProxyHandler = async (event, _context) => {
-	try {
-		let { ip, requestOrigin } = await evaluateRequest(event);
-		await validateIp(ip);
-
-		return {
-			statusCode: 200,
-			body: JSON.stringify({
-					message: `We are checking for an IP address  ${ip} ...`,
-					ip,
-					requestOrigin,
-				},
-			null,
-			2),
-		};
-	} catch (err) {
-		return {
-			statusCode: 400,
-			body: JSON.stringify({
-					error: err.message
-				},
-			null,
-			2),
-		};
-	}
+  try {
+    let { ip, requestOrigin } = await evaluateRequest(event);
+    await validateIp(ip);
+    let lists: Array<File> = await getFireholLists();
+    let flagged: boolean = false;
+    for (let i = 0; i < lists.length; i++) {
+      let lines: string[] = await readIPset(lists[i]);
+      if (lines.includes(ip)) {
+        flagged = true;
+        break;
+      }
+    }
+    let message = "";
+    flagged
+      ? message = `IP Address ${ip} is blocked`
+      : message = `IP Address ${ip} is safe`;
+    return {
+      statusCode: 200,
+      body: JSON.stringify(
+        {
+          message: message,
+          ip,
+          requestOrigin,
+        },
+        null,
+        2,
+      ),
+    };
+  } catch (err) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify(
+        {
+          error: err.message,
+        },
+        null,
+        2,
+      ),
+    };
+  }
 };
 
 /**
@@ -43,38 +69,40 @@ export const ipcheck: APIGatewayProxyHandler = async (event, _context) => {
  * @return {object}  
  */
 const evaluateRequest = (request: APIGatewayEvent) => {
-	let ip: string = null;
-	let requestOrigin: string = null;
-	if (
-		typeof request.queryStringParameters !== "undefined" &&
-		request.queryStringParameters !== null
-	) {
-		if (
-		typeof request.queryStringParameters.ip !== "undefined" &&
-		request.queryStringParameters.ip.length &&
-		request.queryStringParameters.ip !== null
-		) {
-			ip = request.queryStringParameters.ip;
-		} else {
-			throw new Error("The only query parameter excepted is '?ip=<SOMEVALUE>'.");
-		}
-	}
+  let ip: string = null;
+  let requestOrigin: string = null;
+  if (
+    typeof request.queryStringParameters !== "undefined" &&
+    request.queryStringParameters !== null
+  ) {
+    if (
+      typeof request.queryStringParameters.ip !== "undefined" &&
+      request.queryStringParameters.ip.length &&
+      request.queryStringParameters.ip !== null
+    ) {
+      ip = request.queryStringParameters.ip;
+    } else {
+      throw new Error(
+        "The only query parameter excepted is '?ip=<SOMEVALUE>'.",
+      );
+    }
+  }
 
-	if (
-		typeof request.requestContext !== "undefined" &&
-		typeof request.requestContext.identity !== "undefined" &&
-		typeof request.requestContext.identity.sourceIp !== "undefined"
-	) {
-		requestOrigin = request.requestContext.identity.sourceIp;
-	}
-	if (requestOrigin !== null && ip == null) {
-		ip = requestOrigin;
-	}
+  if (
+    typeof request.requestContext !== "undefined" &&
+    typeof request.requestContext.identity !== "undefined" &&
+    typeof request.requestContext.identity.sourceIp !== "undefined"
+  ) {
+    requestOrigin = request.requestContext.identity.sourceIp;
+  }
+  if (requestOrigin !== null && ip == null) {
+    ip = requestOrigin;
+  }
 
-	return {
-		ip,
-		requestOrigin,
-	};
+  return {
+    ip,
+    requestOrigin,
+  };
 };
 
 /**
@@ -84,20 +112,37 @@ const evaluateRequest = (request: APIGatewayEvent) => {
  * @throws {InValidArgumentException} Invalid IP Address
  */
 const validateIp = (ip) => {
-	let ipV4: boolean = new RegExp(
-		/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/,
-	).test(ip);
-	let ipV6: boolean = new RegExp(/^(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}$/).test(
-		ip,
-	);
-	if (!ipV4 && !ipV6) {
-		throw new Error(`invalid IP address ${ip}`);
-	}
+  let ipV4: boolean = new RegExp(
+    /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/,
+  ).test(ip);
+  let ipV6: boolean = new RegExp(/^(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}$/).test(
+    ip,
+  );
+  if (!ipV4 && !ipV6) {
+    throw new Error(`invalid IP address ${ip}`);
+  }
 };
 
-// const searchIp = async (ip) => {
-// 	return new Promise<:boolean>((resolve, reject) => {
-// 		if (ip)
-// 		found ? resolve : reject
-// 	})
-// }
+const getFireholLists = async () => {
+  const response = await fetch(
+    `https://api.github.com/repos/firehol/blocklist-ipsets/git/trees/master?recursive=1`,
+  );
+  const json = await response.json();
+  const files: [] = await json.tree.filter((file) => {
+    if (file.path.endsWith(".ipset")) {
+      return file.path;
+    }
+  });
+  return files;
+};
+
+const readIPset = async (file: File) => {
+  const response = await fetch(
+    `https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/${file.path}`,
+  );
+  const text = await response.text();
+  const sanitized: [] = await text.split("\n").filter((line) => {
+    return line.indexOf("#") !== 0;
+  });
+  return sanitized;
+};
