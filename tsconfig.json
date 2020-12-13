@@ -16,5 +16,13 @@
     ".webpack/**/*",
     "_warmup/**/*",
     ".vscode/**/*"
-  ]
+  ],
+  "typedocOptions": {
+    "mode": "file",
+    "out": "docs",
+    "ignoreCompilerErrors": true,
+    "theme": "minimal",
+    "excludeExternals": true,
+    "exclude": "serverless.ts"
+  }
 }

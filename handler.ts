@@ -2,6 +2,16 @@ import { APIGatewayEvent, APIGatewayProxyHandler } from "aws-lambda";
 import fetch from "node-fetch";
 import "source-map-support/register";
 
+/**
+ * This is the doc comment for handler.ts
+ * @namespace handler.ts
+ * GitHub Repository: {@link https://github.com/johnweland/ipblock-microservice}
+ */
+
+ /**
+  * FileType Interface for custome typing
+  * @interface
+  */
 interface File {
   path: string;
   mode: string;
@@ -12,9 +22,9 @@ interface File {
 }
 
 /**
- * 
- * @param {APIGatewayEvent} event 
- * @param {Context} _context
+ * Primary function for comparing input/request IP to a list of blocked IPSets from Firehol
+ * @param  {APIGatewayEvent}   event 
+ * @param  {Context}   _context
  * 
  * @returns {json} JSON object with success or error data
  */
@@ -63,10 +73,10 @@ export const ipcheck: APIGatewayProxyHandler = async (event, _context) => {
 
 /**
  * Evaluate incoming request for querystring AND|OR origin
- * @param {object} request Inbound request
+ * @param   {object}  request     Inbound request
  * 
- * @throws {InValidArgumentException} Invalid IP Address
- * @return {object}  
+ * @throws  {InValidArgumentException}    Invalid IP Address
+ * @return {object}  IP and RequestOrigin
  */
 const evaluateRequest = (request: APIGatewayEvent) => {
   let ip: string = null;
@@ -107,9 +117,9 @@ const evaluateRequest = (request: APIGatewayEvent) => {
 
 /**
  * Validate IP Address as either ipV4 or ipV6
- * @param {string} ip a v4 IP address
+ * @param   {string}  ip     a v4 IP address
  * 
- * @throws {InValidArgumentException} Invalid IP Address
+ * @throws  {InValidArgumentException}    Invalid IP Address
  */
 const validateIp = (ip) => {
   let ipV4: boolean = new RegExp(
@@ -123,6 +133,11 @@ const validateIp = (ip) => {
   }
 };
 
+/**
+ * Return a array of Files ending in .ipset from the git repository master branch
+ * 
+ * @returns   {[File]}    files array
+ */
 const getFireholLists = async () => {
   const response = await fetch(
     `https://api.github.com/repos/firehol/blocklist-ipsets/git/trees/master?recursive=1`,
@@ -136,6 +151,12 @@ const getFireholLists = async () => {
   return files;
 };
 
+/**
+ * Strips out comment lines and converts the IP address lines to an array of IP addresses
+ * @param   {File}  file    File object from which to grab the path
+ * 
+ * @returns {array}     stanitied ASanitized list of IP Addresses
+ */
 const readIPset = async (file: File) => {
   const response = await fetch(
     `https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/${file.path}`,
