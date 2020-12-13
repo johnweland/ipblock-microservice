@@ -2,6 +2,7 @@ const path = require('path');
 const slsw = require('serverless-webpack');
 const nodeExternals = require('webpack-node-externals');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+const TypedocWebpackPlugin = require('typedoc-webpack-plugin');
 
 module.exports = {
   context: __dirname,
@@ -44,11 +45,12 @@ module.exports = {
     ],
   },
   plugins: [
-    // new ForkTsCheckerWebpackPlugin({
-    //   eslint: true,
-    //   eslintOptions: {
-    //     cache: true
-    //   }
-    // })
+    new TypedocWebpackPlugin({
+      name: 'ipblock-microservice',
+      mode: 'file',
+      theme: './typedoc-theme/',
+      includeDeclarations: false,
+      ignoreCompilerErrors: true,
+    })
   ],
 };
