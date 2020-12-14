@@ -1,25 +1,23 @@
-name: "GitHub Actions Test"
+name: Node.js CI
+
 on:
   pull_request:
-    branches:
-      - develop
-      - master
+    branches: [ main, develop ]
+
 jobs:
-  test:
-    name: "Running Unit Tests"
+  build:
     runs-on: ubuntu-20.04
+
     strategy:
       matrix:
         node-version: [12.x]
+
     steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-      - name: Node Install
-      - run: npm install
-      - name: Install mocha
-      - run: npm install -g mocha
-      - name: Test
-      - run: npm test
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm install
+    - run:  npm install -g mocha
+    - run: npm test
