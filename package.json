@@ -4,8 +4,8 @@
   "description": "A \"cloud native\" service in AWS that will check if an IP address exists in a Firehol blocklist",
   "main": "handler.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "docs": "typedoc"
+    "docs": "typedoc",
+    "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'tests/**/*.ts' --timeout 30000"
   },
   "dependencies": {
     "node-fetch": "^2.6.1",
@@ -13,13 +13,18 @@
     "typedoc": "^0.19.2"
   },
   "devDependencies": {
+    "@homeservenow/serverless-event-mocks": "^1.0.5",
     "@serverless/typescript": "^2.12.0",
     "@types/aws-lambda": "^8.10.64",
+    "@types/chai": "^4.2.14",
+    "@types/mocha": "^8.2.0",
     "@types/node": "^14.14.12",
+    "chai": "^4.2.0",
     "fork-ts-checker-webpack-plugin": "^6.0.0",
+    "mocha": "^8.2.1",
     "serverless-webpack": "^5.2.0",
     "ts-loader": "^8.0.10",
-    "ts-node": "^9.0.0",
+    "ts-node": "^9.1.1",
     "typedoc-webpack-plugin": "^1.1.4",
     "typescript": "^4.0.5",
     "webpack": "^5.4.0",
