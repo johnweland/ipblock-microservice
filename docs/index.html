@@ -44,7 +44,7 @@
 <nav class="tsd-navigation secondary">
 	<ul>
 		<li class=" tsd-kind-interface">
-			<a href="interfaces/file.html" class="tsd-kind-icon">File</a>
+			<a href="interfaces/fireholfile.html" class="tsd-kind-icon">Fire<wbr>Hol<wbr>File</a>
 		</li>
 		<li class=" tsd-kind-function">
 			<a href="globals.html#evaluaterequest" class="tsd-kind-icon">evaluate<wbr>Request</a>
@@ -138,7 +138,7 @@
 					<section class="tsd-index-section ">
 						<h3>Interfaces</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-interface"><a href="interfaces/file.html" class="tsd-kind-icon">File</a></li>
+							<li class="tsd-kind-interface"><a href="interfaces/fireholfile.html" class="tsd-kind-icon">Fire<wbr>Hol<wbr>File</a></li>
 						</ul>
 					</section>
 					<section class="tsd-index-section ">
@@ -160,13 +160,13 @@
 				<a name="evaluaterequest" class="tsd-anchor"></a>
 				<h3><span class="tsd-flag ts-flagConst">Const</span> evaluate<wbr>Request</h3>
 				<ul class="tsd-signatures tsd-kind-function">
-					<li class="tsd-signature tsd-kind-icon">evaluate<wbr>Request<span class="tsd-signature-symbol">(</span>request<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">APIGatewayEvent</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>ip<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>requestOrigin<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span></li>
+					<li class="tsd-signature tsd-kind-icon">evaluate<wbr>Request<span class="tsd-signature-symbol">(</span>request<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">APIGatewayEvent</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>ip<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>origin<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">object</span><span class="tsd-signature-symbol"> }</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/johnweland/ipblock-microservice/blob/df2117e/handler.ts#L81">handler.ts:81</a></li>
+								<li>Defined in <a href="https://github.com/johnweland/ipblock-microservice/blob/cc35a76/handler.ts#L91">handler.ts:91</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -175,7 +175,7 @@
 							</div>
 							<dl class="tsd-comment-tags">
 								<dt>throws</dt>
-								<dd><p>{InValidArgumentException}    Invalid IP Address</p>
+								<dd><p>{InValidArgumentException} Invalid IP Address</p>
 								</dd>
 							</dl>
 						</div>
@@ -190,14 +190,25 @@
 								</div>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-symbol">{ </span>ip<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>requestOrigin<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span></h4>
-						<p>IP and RequestOrigin</p>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-symbol">{ </span>ip<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>origin<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">object</span><span class="tsd-signature-symbol"> }</span></h4>
+						<p>IP and origin</p>
 						<ul class="tsd-parameters">
 							<li class="tsd-parameter">
 								<h5>ip<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
 							</li>
 							<li class="tsd-parameter">
-								<h5>request<wbr>Origin<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
+								<h5>origin<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">object</span></h5>
+								<ul class="tsd-parameters">
+									<li class="tsd-parameter">
+										<h5>country<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
+									</li>
+									<li class="tsd-parameter">
+										<h5>ip<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
+									</li>
+									<li class="tsd-parameter">
+										<h5>user<wbr>Agent<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
+									</li>
+								</ul>
 							</li>
 						</ul>
 					</li>
@@ -213,7 +224,7 @@
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/johnweland/ipblock-microservice/blob/df2117e/handler.ts#L141">handler.ts:141</a></li>
+								<li>Defined in <a href="https://github.com/johnweland/ipblock-microservice/blob/cc35a76/handler.ts#L156">handler.ts:156</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -222,7 +233,7 @@
 							</div>
 						</div>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">[</span><span class="tsd-signature-symbol">]</span><span class="tsd-signature-symbol">&gt;</span></h4>
-						<p>files array</p>
+						<p>An array of file:File</p>
 					</li>
 				</ul>
 			</section>
@@ -236,7 +247,7 @@
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/johnweland/ipblock-microservice/blob/df2117e/handler.ts#L31">handler.ts:31</a></li>
+								<li>Defined in <a href="https://github.com/johnweland/ipblock-microservice/blob/cc35a76/handler.ts#L31">handler.ts:31</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -266,13 +277,13 @@
 				<a name="readipset" class="tsd-anchor"></a>
 				<h3><span class="tsd-flag ts-flagConst">Const</span> readIPset</h3>
 				<ul class="tsd-signatures tsd-kind-function">
-					<li class="tsd-signature tsd-kind-icon">readIPset<span class="tsd-signature-symbol">(</span>file<span class="tsd-signature-symbol">: </span><a href="interfaces/file.html" class="tsd-signature-type">File</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">[</span><span class="tsd-signature-symbol">]</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">readIPset<span class="tsd-signature-symbol">(</span>file<span class="tsd-signature-symbol">: </span><a href="interfaces/fireholfile.html" class="tsd-signature-type">FireHolFile</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">[</span><span class="tsd-signature-symbol">]</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/johnweland/ipblock-microservice/blob/df2117e/handler.ts#L160">handler.ts:160</a></li>
+								<li>Defined in <a href="https://github.com/johnweland/ipblock-microservice/blob/cc35a76/handler.ts#L175">handler.ts:175</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -283,7 +294,7 @@
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
 							<li>
-								<h5>file: <a href="interfaces/file.html" class="tsd-signature-type">File</a></h5>
+								<h5>file: <a href="interfaces/fireholfile.html" class="tsd-signature-type">FireHolFile</a></h5>
 								<div class="tsd-comment tsd-typography">
 									<div class="lead">
 										<p>File object from which to grab the path</p>
@@ -292,7 +303,7 @@
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">[</span><span class="tsd-signature-symbol">]</span><span class="tsd-signature-symbol">&gt;</span></h4>
-						<p>stanitied ASanitized list of IP Addresses</p>
+						<p>A sanitized list of IP Addresses</p>
 					</li>
 				</ul>
 			</section>
@@ -300,24 +311,19 @@
 				<a name="validateip" class="tsd-anchor"></a>
 				<h3><span class="tsd-flag ts-flagConst">Const</span> validate<wbr>Ip</h3>
 				<ul class="tsd-signatures tsd-kind-function">
-					<li class="tsd-signature tsd-kind-icon">validate<wbr>Ip<span class="tsd-signature-symbol">(</span>ip<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					<li class="tsd-signature tsd-kind-icon">validate<wbr>Ip<span class="tsd-signature-symbol">(</span>ip<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/johnweland/ipblock-microservice/blob/df2117e/handler.ts#L124">handler.ts:124</a></li>
+								<li>Defined in <a href="https://github.com/johnweland/ipblock-microservice/blob/cc35a76/handler.ts#L138">handler.ts:138</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
 							<div class="lead">
 								<p>Validate IP Address as either ipV4 or ipV6</p>
 							</div>
-							<dl class="tsd-comment-tags">
-								<dt>throws</dt>
-								<dd><p>{InValidArgumentException}    Invalid IP Address</p>
-								</dd>
-							</dl>
 						</div>
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
@@ -325,12 +331,13 @@
 								<h5>ip: <span class="tsd-signature-type">any</span></h5>
 								<div class="tsd-comment tsd-typography">
 									<div class="lead">
-										<p>a v4 IP address</p>
+										<p>v4 or v6 IP address</p>
 									</div>
 								</div>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+						<p>Valid IP address?</p>
 					</li>
 				</ul>
 			</section>
