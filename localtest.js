@@ -1,7 +1,7 @@
-import { APIGatewayEvent, APIGatewayProxyHandler } from "aws-lambda";
-import fetch from "node-fetch";
-import "source-map-support/register";
-import geoip from 'geoip-lite';
+const { APIGatewayEvent, APIGatewayProxyHandler } = require("aws-lambda");
+const fetch = require("node-fetch");
+require("source-map-support/register");
+const geoip = require('geoip-lite');
 
 /**
  * This is the doc comment for handler.ts
@@ -9,18 +9,6 @@ import geoip from 'geoip-lite';
  * GitHub Repository: {@link https://github.com/johnweland/ipblock-microservice}
  */
 
- /**
-  * FileType Interface for custome typing
-  * @interface
-  */
-interface FireHolFile {
-  path: string;
-  mode: string;
-  type: string;
-  sha: string;
-  size: number;
-  url: string;
-}
 
 /**
  * Primary function for comparing input/request IP to a list of blocked IPSets from Firehol
@@ -29,32 +17,33 @@ interface FireHolFile {
  * 
  * @returns {json} JSON object with success or error data
  */
-export const ipcheck: APIGatewayProxyHandler = async (event, _context) => {
+export const ipcheck = async (event, _context) => {
   try {
     let { ip, origin } = await evaluateRequest(event);
     let valid = await validateIp(ip);
     if (!valid) {
       throw new Error(`invalid IP address ${ip}`);
     }
-    let lists: Array<FireHolFile> = await getFireholLists();
-    let flagged: boolean = false;
-    let count: number = 0;
-    let foundIn: string|null = null;
-    // NOTE: add let n for length caching, should improve performance some
-    for (let i:number = 0, n:number = lists.length; i < n; ++i) {
-      let lines: string[] = await readIPset(lists[i]);
+    let lists = await getFireholLists();
+    let flagged = false;
+    let count = 0;
+    let foundIn = "";
+    for (let i = 0; i < lists.length; i++) {
+      let lines = await readIPset(lists[i]);
       count = count + lines.length; 
       if (lines.includes(ip)) {
         flagged = true;
-        foundIn = `https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/${lists[i].path}`;
+        foundIn = lists[i].path;
         break;
       }
     }
-
-    let telemetry = await getTelemetry(ip);
+    let telemetry = {};
+    if (flagged) {
+      telemetry = await getTelemetry(ip);
+    }
     let message = `The IP address ${ip}`;
     flagged
-      ? message += ` was found amoung an ipset, please see 'request_results'.`
+      ? message += ` was found in ${foundIn}.`
       : message += ` is safe.`;
 
     
@@ -63,15 +52,14 @@ export const ipcheck: APIGatewayProxyHandler = async (event, _context) => {
       body: JSON.stringify(
         {
           message: message,
-          request_results: {
+          reference_ip: {
             ip,
-            telemetry: JSON.parse(telemetry),
-            addresses_searched: count,
-            ipsets_count: lists.length,
-            found: flagged,
-            ipset: foundIn
+            telemetry
           },
-          request_origin: origin
+          addresses_searched: count,
+          files_searched: lists.length,
+          foundIn,
+          origin
         },
         null,
         2,
@@ -98,9 +86,9 @@ export const ipcheck: APIGatewayProxyHandler = async (event, _context) => {
  * @throws  {InValidArgumentException} Invalid IP Address
  * @return  {object}  IP and origin
  */
-export const evaluateRequest = (request:APIGatewayEvent) => {
-  let ip: string = null;
-  let requestOrigin: string = null;
+export const evaluateRequest = (request) => {
+  let ip = null;
+  let requestOrigin = null;
   if (
     typeof request.queryStringParameters !== "undefined" &&
     request.queryStringParameters !== null
@@ -146,10 +134,10 @@ export const evaluateRequest = (request:APIGatewayEvent) => {
  * @returns {boolean} Valid IP address?
  */
 export const validateIp = (ip) => {
-  let ipV4: boolean = new RegExp(
+  let ipV4 = new RegExp(
     /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/,
   ).test(ip);
-  let ipV6: boolean = new RegExp(/^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/).test(
+  let ipV6 = new RegExp(/^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/).test(
     ip,
   );
   if (!ipV4 && !ipV6) {
@@ -168,7 +156,7 @@ export const getFireholLists = async () => {
     `https://api.github.com/repos/firehol/blocklist-ipsets/git/trees/master?recursive=1`,
   );
   const json = await response.json();
-  const files: [] = await json.tree.filter((file) => {
+  const files = await json.tree.filter((file) => {
     if (file.path.endsWith(".ipset")) {
       return file.path;
     }
@@ -182,12 +170,12 @@ export const getFireholLists = async () => {
  * 
  * @returns {array}      A sanitized list of IP Addresses
  */
-export const readIPset = async (file: FireHolFile) => {
+export const readIPset = async (file) => {
   const response = await fetch(
     `https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/${file.path}`,
   );
   const text = await response.text();
-  const sanitized: [] = await text.split("\n").filter((line) => {
+  const sanitized = await text.split("\n").filter((line) => {
     return line.indexOf("#") !== 0;
   });
   return sanitized;
@@ -197,11 +185,11 @@ export const readIPset = async (file: FireHolFile) => {
  * 
  * @param ip 
  */
-export const getTelemetry = async (ip:string) => {
+export const getTelemetry = async (ip) => {
   let telemetry = await geoip.lookup(ip);
 
   if (telemetry) {
     return JSON.stringify(telemetry);                                                                
   }  
-  return JSON.stringify("no telemetry data found");
+  return JSON.stringify({});
 }
