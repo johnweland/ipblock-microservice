@@ -15,9 +15,10 @@ const serverlessConfiguration: AWS = {
   provider: {
     name: 'aws',
     runtime: 'nodejs12.x',
+    timeout: 180,
     apiGateway: {
       minimumCompressionSize: 1024,
-      shouldStartNameWithService: true
+      shouldStartNameWithService: true,
     },
     environment: {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
@@ -26,6 +27,7 @@ const serverlessConfiguration: AWS = {
   functions: {
     ipcheck: {
       handler: 'handler.ipcheck',
+      timeout: 180,
       events: [
         {
           http: {

@@ -1,13 +1,11 @@
 import {
   evaluateRequest,
   getFireholLists,
-  ipcheck,
   readIPset,
   validateIp,
 } from "../handler";
 import {
   createMockAPIGatewayEvent,
-  createMockContext,
 } from "@homeservenow/serverless-event-mocks";
 import { expect } from "chai";
 
@@ -71,7 +69,7 @@ describe("Testing readIPset()", () => {
   }
   it("pass: the return list is not empty", async () => {
     let file: FireHolFile = {
-      "path": "blocklist_net_ua.ipset",
+      "path": "botscout_30d.ipset",
       "mode": "100644",
       "type": "blob",
       "sha": "376861426331e5d6cae3323a2f2d269cc44f9593",
@@ -82,27 +80,5 @@ describe("Testing readIPset()", () => {
     let list = await readIPset(file);
     expect(list).to.be.a("array");
     expect(list).to.include("127.0.0.1");;
-  });
-});
-
-describe("Testing ipcheck()", () => {
-  it("pass: if the return is an object", async () => {
-    const context = createMockContext();
-    const event = createMockAPIGatewayEvent({
-      queryStringParameters: {
-        ip: "127.0.0.1",
-      },
-    });
-    let evaluation = await ipcheck(event, context, null);
-    expect(evaluation).to.deep.property("statusCode").to.equal(200);
-    expect(evaluation).to.have.property("body");
-  });
-  it("fail: invalid request", async () => {
-    const context = createMockContext();
-    const event = createMockAPIGatewayEvent();
-    let evaluation = await ipcheck(event, context, null);
-    expect(evaluation).to.a("object");
-    expect(evaluation).to.deep.property("statusCode").to.equal(400);
-    expect(evaluation).to.have.property("body");
   });
 });
