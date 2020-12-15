@@ -40,12 +40,13 @@ export const ipcheck: APIGatewayProxyHandler = async (event, _context) => {
     let flagged: boolean = false;
     let count: number = 0;
     let foundIn: string|null = null;
-    for (let i = 0; i < lists.length; i++) {
+    // NOTE: add let n for length caching, should improve performance some
+    for (let i:number = 0, n:number = lists.length; i < n; ++i) {
       let lines: string[] = await readIPset(lists[i]);
       count = count + lines.length; 
       if (lines.includes(ip)) {
         flagged = true;
-        foundIn = lists[i].path;
+        foundIn = `https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/${lists[i].path}`;
         break;
       }
     }
@@ -53,7 +54,7 @@ export const ipcheck: APIGatewayProxyHandler = async (event, _context) => {
     let telemetry = await getTelemetry(ip);
     let message = `The IP address ${ip}`;
     flagged
-      ? message += ` was found in ${foundIn}.`
+      ? message += ` was found amoung an ipset, please see 'request_results'.`
       : message += ` is safe.`;
 
     
@@ -62,13 +63,14 @@ export const ipcheck: APIGatewayProxyHandler = async (event, _context) => {
       body: JSON.stringify(
         {
           message: message,
-          reference_ip: {
+          request_results: {
             ip,
-            telemetry: JSON.parse(telemetry)
+            telemetry: JSON.parse(telemetry),
+            addresses_searched: count,
+            ipsets_count: lists.length,
+            found: flagged,
+            ipset: foundIn
           },
-          addresses_searched: count,
-          files_searched: lists.length,
-          foundIn,
           request_origin: origin
         },
         null,
