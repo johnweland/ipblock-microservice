@@ -20,20 +20,28 @@ export const updateDynamoDB = async () => {
     // NOTE: add let n for length caching, should improve performance some
     for (let i: number = 0, n: number = lists.length; i < n; ++i) {
       let lines: string[] = await readIPset(lists[i]);
-      type kvtype = {
+
+      type batchWriteObject = {
+        PutRequest: putRequestObject;
+      };
+      type putRequestObject = {
+        Item: itemObject;
+      };
+      type itemObject = {
         ip_address: string;
         ipset_filename: string;
       };
-      let items: [] = [];
+      let items: batchWriteObject[] = [];
       for (let x: number = 0, y: number = lines.length; x < y; ++i) {
-        items.push({
+        let item: batchWriteObject = {
           PutRequest: {
             Item: {
               ip_address: lines[i],
               ipset_filename: lists[i].path,
             },
           },
-        });
+        };
+        items.push(item);
       }
       const params = {
         RequestItems: {
