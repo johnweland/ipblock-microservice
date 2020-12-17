@@ -48,7 +48,14 @@ export const updateDynamoDB = async () => {
           [`${process.env.DYNAMODB_TABLE}`]: items,
         },
       };
-      await dynamodb.batchWrite(params);
+      await dynamodb.batchWrite(params, (err, data) => {
+        if (err) {
+          console.error(err);
+        }
+        if (data) {
+          console.info(`data written to dynamoDB`)
+        }
+      });
     }
   } catch (err) {
     console.error(err);
