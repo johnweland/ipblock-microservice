@@ -32,6 +32,7 @@ const serverlessConfiguration: AWS = {
           "dynamodb:Scan",
           "dynamodb:GetItem",
           "dynamodb:PutItem",
+          "dynamodb:BatchWriteItem",
           "dynamodb:UpdateItem",
           "dynamodb:DeleteItem",
         ],
@@ -41,7 +42,7 @@ const serverlessConfiguration: AWS = {
   },
   functions: {
     dynamo: {
-      handler: "dynamo.handler.updateDynamoDB",
+      handler: "dynamo_handler.parseData",
       events: [
         {
           schedule: {
@@ -51,7 +52,7 @@ const serverlessConfiguration: AWS = {
       ],
     },
     ipcheck: {
-      handler: "handler.ipcheck",
+      handler: "ip_handler.ipcheck",
       events: [
         {
           http: {

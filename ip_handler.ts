@@ -1,4 +1,5 @@
 import { APIGatewayEvent, APIGatewayProxyHandler } from "aws-lambda";
+import { getData } from './dynamo_handler';
 import fetch from "node-fetch";
 import "source-map-support/register";
 import geoip from 'geoip-lite';
@@ -36,28 +37,12 @@ export const ipcheck: APIGatewayProxyHandler = async (event, _context) => {
     if (!valid) {
       throw new Error(`invalid IP address ${ip}`);
     }
-    let lists: Array<FireHolFile> = await getFireholLists();
-    let flagged: boolean = false;
-    let count: number = 0;
-    let foundIn: string|null = null;
-    // NOTE: add let n for length caching, should improve performance some
-    for (let i:number = 0, n:number = lists.length; i < n; ++i) {
-      let lines: string[] = await readIPset(lists[i]);
-      count = count + lines.length; 
-      if (lines.includes(ip)) {
-        flagged = true;
-        foundIn = `https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/${lists[i].path}`;
-        break;
-      }
-    }
-
+    let blocked = await getData(ip);
     let telemetry = await getTelemetry(ip);
     let message = `The IP address ${ip}`;
-    flagged
+    blocked.Items.length
       ? message += ` was found amoung an ipset, please see 'request_results'.`
       : message += ` is safe.`;
-
-    
     return {
       statusCode: 200,
       body: JSON.stringify(
@@ -66,10 +51,8 @@ export const ipcheck: APIGatewayProxyHandler = async (event, _context) => {
           request_results: {
             ip,
             telemetry: JSON.parse(telemetry),
-            addresses_searched: count,
-            ipsets_count: lists.length,
-            found: flagged,
-            ipset: foundIn
+            found: blocked.Items.length ? true : false,
+            ipset: blocked.Items.length ? `https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/${blocked.Items[0].ipset_filename}` : null
           },
           request_origin: origin
         },
@@ -158,44 +141,12 @@ export const validateIp = (ip) => {
   return true;
 };
 
-/**
- * Return a array of Files ending in .ipset from the git repository master branch
- * 
- * @returns {[FireHolFile]} An array of file:File
- */
-export const getFireholLists = async () => {
-  const response = await fetch(
-    `https://api.github.com/repos/firehol/blocklist-ipsets/git/trees/master?recursive=1`,
-  );
-  const json = await response.json();
-  const files: [] = await json.tree.filter((file) => {
-    if (file.path.endsWith(".ipset")) {
-      return file.path;
-    }
-  });
-  return files;
-};
 
 /**
- * Strips out comment lines and converts the IP address lines to an array of IP addresses
- * @param   {FireHolFile}  file File object from which to grab the path
+ * Get telemerty data of an IP address
+ * @param {string} ip IP address
  * 
- * @returns {array}      A sanitized list of IP Addresses
- */
-export const readIPset = async (file: FireHolFile) => {
-  const response = await fetch(
-    `https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/${file.path}`,
-  );
-  const text = await response.text();
-  const sanitized: [] = await text.split("\n").filter((line) => {
-    return line.indexOf("#") !== 0;
-  });
-  return sanitized;
-};
-
-/**
- * 
- * @param ip 
+ * @return {string} stringified JSON of Telemetry data
  */
 export const getTelemetry = async (ip:string) => {
   let telemetry = await geoip.lookup(ip);
