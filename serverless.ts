@@ -2,6 +2,7 @@ import type { AWS } from "@serverless/typescript";
 
 const SERVICE_NAME: string = "ipblock-microservice";
 const DYNAMODB_TABLE: string = `${SERVICE_NAME}-db`;
+const S3_BUCKET: string = `${SERVICE_NAME}-seed`;
 const serverlessConfiguration: AWS = {
   service: SERVICE_NAME,
   useDotenv: true,
@@ -23,6 +24,7 @@ const serverlessConfiguration: AWS = {
     environment: {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
       DYNAMODB_TABLE,
+      S3_BUCKET
     },
     iamRoleStatements: [
       {
@@ -38,6 +40,14 @@ const serverlessConfiguration: AWS = {
         ],
         Resource: "*",
       },
+      {
+        Effect: "Allow",
+        Action: [
+          "s3:PutObject",
+          "s3:GetObject",
+        ],
+        Resource: `arn:aws:s3:::${S3_BUCKET}/*`
+      }
     ],
   },
   functions: {
@@ -103,6 +113,12 @@ const serverlessConfiguration: AWS = {
           TableName: DYNAMODB_TABLE,
         },
       },
+      s3: {
+        Type: "AWS::S3::Bucket",
+        Properties: {
+          BucketName: S3_BUCKET,
+        }
+      }
     },
   },
 };

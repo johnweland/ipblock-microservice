@@ -1,7 +1,9 @@
-import { DynamoDB } from "aws-sdk";
+import { DynamoDB, S3 } from "aws-sdk";
 import fetch from "node-fetch";
+import * as csv from "csv-writer";
 
 const dynamodb = new DynamoDB.DocumentClient();
+const s3 = new S3();
 
 type FireHolFile = {
   path: string;
@@ -22,18 +24,18 @@ type itemObject = {
   ipset_filename: string;
 };
 
-export const getData = async (ip_address:string) => {
+export const getData = async (ip_address: string) => {
   let queryParams = {
     TableName: `${process.env.DYNAMODB_TABLE}`,
     KeyConditionExpression: "#ip_address = :ip_address",
     ExpressionAttributeNames: {
-      "#ip_address": "ip_address"
+      "#ip_address": "ip_address",
     },
     ExpressionAttributeValues: {
-      ":ip_address": ip_address
-    }
+      ":ip_address": ip_address,
+    },
   };
-  return await dynamodb.query(queryParams).promise()
+  return await dynamodb.query(queryParams).promise();
 };
 
 export const parseData = async () => {
@@ -73,20 +75,22 @@ export const updateDynamoDB = async (items) => {
           ":file": items[i].ipset_filename,
         },
       };
-      let exists = await dynamodb.query(queryParams, (err, data) => {
-        if (err) {
-          console.error(err);
-        } else {
-          if (data.Items.length > 0) {
-            return true;
-          }
-          return false;
-        }
-      });
-      let putParams:putRequestObject = {
+      // let exists = await dynamodb.query(queryParams, (err, data) => {
+      //   if (err) {
+      //     console.error(err);
+      //   } else {
+      //     if (data.Items.length > 0) {
+      //       return true;
+      //     }
+      //     return false;
+      //   }
+      // });
+
+      let exists = false;
+      let putParams: putRequestObject = {
         TableName: `${process.env.DYNAMODB_TABLE}`,
-        Item: items[i]
-      }
+        Item: items[i],
+      };
       if (!exists) {
         await dynamodb.put(putParams, (err, data) => {
           if (err) {
@@ -136,4 +140,35 @@ export const readIPset = async (file: FireHolFile) => {
     return line.indexOf("#") !== 0;
   });
   return sanitized;
+};
+
+export const createSeedFile = async (rows) => {
+  const csvfile = csv.createObjectCsvWriter({
+    path: "seedfile.csv",
+    header: [
+      { id: "ip_address", title: "ip_address" },
+      { id: "ipset_filename", title: "ipset_filename" },
+    ],
+  });
+  return await csvfile.writeRecords(rows);
+
+};
+
+export const uploadSeedFileToS3 = async (rows) => {
+  if (!rows.length) {
+    console.error("No rows to reference");
+    return;
+  }
+  console.log("row count", rows.length);
+  try {
+    let buffer = Buffer.from(JSON.stringify(rows))
+    const params = {
+      Bucket: process.env.S3_BUCKET,
+      Key: "seedfile.csv",
+      Body: buffer
+    };
+    return await s3.putObject(params).promise();
+  } catch (err) {
+    console.error(err);
+  }
 };

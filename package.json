@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "aws-sdk": "^2.812.0",
+    "csv-writer": "^1.6.0",
+    "fast-csv": "^4.3.6",
     "geoip-lite": "^1.4.2",
     "node-fetch": "^2.6.1",
     "source-map-support": "^0.5.19",
