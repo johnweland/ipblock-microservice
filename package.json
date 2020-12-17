@@ -8,6 +8,7 @@
     "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'tests/**/*.ts' --timeout 1800000"
   },
   "dependencies": {
+    "aws-sdk": "^2.812.0",
     "geoip-lite": "^1.4.2",
     "node-fetch": "^2.6.1",
     "source-map-support": "^0.5.19",

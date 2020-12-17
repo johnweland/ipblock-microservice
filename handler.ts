@@ -10,10 +10,10 @@ import geoip from 'geoip-lite';
  */
 
  /**
-  * FileType Interface for custome typing
-  * @interface
+  * FileType for custom typing
+  * @typeDef
   */
-interface FireHolFile {
+type FireHolFile = {
   path: string;
   mode: string;
   type: string;
@@ -161,7 +161,7 @@ export const validateIp = (ip) => {
 /**
  * Return a array of Files ending in .ipset from the git repository master branch
  * 
- * @returns {[File]} An array of file:File
+ * @returns {[FireHolFile]} An array of file:File
  */
 export const getFireholLists = async () => {
   const response = await fetch(

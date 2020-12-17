@@ -1,0 +1,72 @@
+import { DynamoDB } from "aws-sdk";
+import fetch from "node-fetch";
+
+
+
+type FireHolFile = {
+  path: string;
+  mode: string;
+  type: string;
+  sha: string;
+  size: number;
+  url: string;
+};
+
+const dynamodb = new DynamoDB.DocumentClient();
+
+export const updateDynamoDB = async () => {
+  try {
+    let lists: Array<FireHolFile> = await getFireholLists();
+    // NOTE: add let n for length caching, should improve performance some
+    for (let i: number = 0, n: number = lists.length; i < n; ++i) {
+      let lines: string[] = await readIPset(lists[i]);
+      for (let x: number = 0, y: number = lines.length; x < y; ++i) {
+        const params = {
+          TableName: process.env.DYNAMODB_TABLE,
+          Item: {
+            ip_address: lines[i],
+            ipset_filename: lists[i].path,
+          },
+        };
+        await dynamodb.put(params);
+      }
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+/**
+ * Return a array of Files ending in .ipset from the git repository master branch
+ * 
+ * @returns {[FireHolFile]} An array of file:FireHolFile
+ */
+export const getFireholLists = async () => {
+  const response = await fetch(
+    `https://api.github.com/repos/firehol/blocklist-ipsets/git/trees/master?recursive=1`,
+  );
+  const json = await response.json();
+  const files: [FireHolFile] = await json.tree.filter((file) => {
+    if (file.path.endsWith(".ipset")) {
+      return file.path;
+    }
+  });
+  return files;
+};
+
+/**
+ * Strips out comment lines and converts the IP address lines to an array of IP addresses
+ * @param   {FireHolFile}  file File object from which to grab the path
+ * 
+ * @returns {array}      A sanitized list of IP Addresses
+ */
+export const readIPset = async (file: FireHolFile) => {
+  const response = await fetch(
+    `https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/${file.path}`,
+  );
+  const text = await response.text();
+  const sanitized: [] = await text.split("\n").filter((line) => {
+    return line.indexOf("#") !== 0;
+  });
+  return sanitized;
+};
