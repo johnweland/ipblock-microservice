@@ -1,7 +1,7 @@
 import { DynamoDB } from "aws-sdk";
 import fetch from "node-fetch";
 
-
+export const getData = async () => {};
 
 type FireHolFile = {
   path: string;
@@ -20,16 +20,27 @@ export const updateDynamoDB = async () => {
     // NOTE: add let n for length caching, should improve performance some
     for (let i: number = 0, n: number = lists.length; i < n; ++i) {
       let lines: string[] = await readIPset(lists[i]);
+      type kvtype = {
+        ip_address: string;
+        ipset_filename: string;
+      };
+      let items: [] = [];
       for (let x: number = 0, y: number = lines.length; x < y; ++i) {
-        const params = {
-          TableName: process.env.DYNAMODB_TABLE,
-          Item: {
-            ip_address: lines[i],
-            ipset_filename: lists[i].path,
+        items.push({
+          PutRequest: {
+            Item: {
+              ip_address: lines[i],
+              ipset_filename: lists[i].path,
+            },
           },
-        };
-        await dynamodb.put(params);
+        });
       }
+      const params = {
+        RequestItems: {
+          [`${process.env.DYNAMODB_TABLE}`]: items,
+        },
+      };
+      await dynamodb.batchWrite(params);
     }
   } catch (err) {
     console.error(err);
