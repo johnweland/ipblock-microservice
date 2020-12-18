@@ -1,6 +1,7 @@
 import { DynamoDB, S3 } from "aws-sdk";
 import fetch from "node-fetch";
-import * as csv from "csv-writer";
+import * as csv from "fast-csv";
+import * as fs from "fs";
 
 const dynamodb = new DynamoDB.DocumentClient();
 const s3 = new S3();
@@ -53,7 +54,14 @@ export const parseData = async () => {
         items.push(item);
       }
     }
-    updateDynamoDB(items);
+    // removing duplicate IP's that live in other files. 1/2 the file size
+    let output = Object.values(
+      items.reduce((c, e) => {
+        if (!c[e.ip_address]) c[e.ip_address] = e;
+        return c;
+      }, {}),
+    );
+    await updateDynamoDB(output);
   } catch (err) {
     console.error(err);
   }
@@ -75,18 +83,16 @@ export const updateDynamoDB = async (items) => {
           ":file": items[i].ipset_filename,
         },
       };
-      // let exists = await dynamodb.query(queryParams, (err, data) => {
-      //   if (err) {
-      //     console.error(err);
-      //   } else {
-      //     if (data.Items.length > 0) {
-      //       return true;
-      //     }
-      //     return false;
-      //   }
-      // });
-
-      let exists = false;
+      let exists = await dynamodb.query(queryParams, (err, data) => {
+        if (err) {
+          console.error(err);
+        } else {
+          if (data.Items.length > 0) {
+            return true;
+          }
+          return false;
+        }
+      });
       let putParams: putRequestObject = {
         TableName: `${process.env.DYNAMODB_TABLE}`,
         Item: items[i],
@@ -101,7 +107,7 @@ export const updateDynamoDB = async (items) => {
           }
         });
       }
-    }
+    }    
   } catch (err) {
     console.error(err);
   }
@@ -143,15 +149,8 @@ export const readIPset = async (file: FireHolFile) => {
 };
 
 export const createSeedFile = async (rows) => {
-  const csvfile = csv.createObjectCsvWriter({
-    path: "seedfile.csv",
-    header: [
-      { id: "ip_address", title: "ip_address" },
-      { id: "ipset_filename", title: "ipset_filename" },
-    ],
-  });
-  return await csvfile.writeRecords(rows);
-
+  const ws = fs.createWriteStream("seedfile.csv");
+  return await csv.write(rows, { headers: true }).pipe(ws);
 };
 
 export const uploadSeedFileToS3 = async (rows) => {
@@ -161,13 +160,25 @@ export const uploadSeedFileToS3 = async (rows) => {
   }
   console.log("row count", rows.length);
   try {
-    let buffer = Buffer.from(JSON.stringify(rows))
+    let buffer = Buffer.from(JSON.stringify(rows));
     const params = {
       Bucket: process.env.S3_BUCKET,
       Key: "seedfile.csv",
-      Body: buffer
+      Body: buffer,
     };
     return await s3.putObject(params).promise();
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+export const readSeedFileFromS3 = async () => {
+  try {
+    const params = {
+      Bucket: process.env.S3_BUCKET,
+      Key: "seedfile.csv",
+    };
+    return await s3.getObject(params).promise();
   } catch (err) {
     console.error(err);
   }
