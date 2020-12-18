@@ -15,6 +15,7 @@ type FireHolFile = {
   url: string;
 };
 
+
 type putRequestObject = {
   Item: itemObject;
   TableName: string;
@@ -69,45 +70,28 @@ export const parseData = async () => {
 
 export const updateDynamoDB = async (items) => {
   try {
-    for (let i: number = 0, n: number = items.length; i < n; ++i) {
-      let queryParams = {
-        TableName: `${process.env.DYNAMODB_TABLE}`,
-        ProjectionExpression: "#ip, #file",
-        KeyConditionExpression: "#ip = :ip and #file = :file",
-        ExpressionAttributeNames: {
-          "#ip": "ip_address",
-          "#file": "ipset_file",
-        },
-        ExpressionAttributeValues: {
-          ":ip": items[i].ip_address,
-          ":file": items[i].ipset_filename,
-        },
-      };
-      let exists = await dynamodb.query(queryParams, (err, data) => {
-        if (err) {
-          console.error(err);
-        } else {
-          if (data.Items.length > 0) {
-            return true;
-          }
-          return false;
-        }
-      });
-      let putParams: putRequestObject = {
-        TableName: `${process.env.DYNAMODB_TABLE}`,
-        Item: items[i],
-      };
-      if (!exists) {
-        await dynamodb.put(putParams, (err, data) => {
-          if (err) {
-            console.error(err);
-          }
-          if (data) {
-            console.info(`data written to dynamoDB`);
+    let chunkSize: number = 24;
+    let tempArray: itemObject[] = [];
+    for (let i: number = 0, n: number = items.length; i < n; i += chunkSize) {
+      tempArray = items.slice(i, i + chunkSize);
+      let rows = [];
+      tempArray.forEach(row => {
+        rows.push({
+          PutRequest: {
+            Item: {
+              ip_address: row.ip_address,
+              ipset_filename: row.ipset_filename
+            }
           }
         });
+      });
+      let params = {
+        RequestItems: {
+          'ipblock-microservice-db': rows 
+        }
       }
-    }    
+      await dynamodb.batchWrite(params).promise();
+    }
   } catch (err) {
     console.error(err);
   }

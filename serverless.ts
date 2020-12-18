@@ -56,7 +56,7 @@ const serverlessConfiguration: AWS = {
       events: [
         {
           schedule: {
-            rate: "rate(120 minutes)",
+            rate: "rate(1 day)",
           },
         },
       ],
