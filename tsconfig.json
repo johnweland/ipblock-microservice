@@ -19,10 +19,10 @@
     ".vscode/**/*"
   ],
   "typedocOptions": {
-    "mode": "file",
+    "mode": "module",
     "out": "docs",
     "ignoreCompilerErrors": true,
-    "theme": "minimal",
+    "theme": "default",
     "excludeExternals": true,
     "exclude": "serverless.ts"
   }

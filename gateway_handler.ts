@@ -1,27 +1,13 @@
 import { APIGatewayEvent, APIGatewayProxyHandler } from "aws-lambda";
-import { getData } from './dynamo_handler';
-import fetch from "node-fetch";
+import { queryDynamoDB } from "./dynamo_handler";
 import "source-map-support/register";
-import geoip from 'geoip-lite';
+import geoip from "geoip-lite";
 
 /**
  * This is the doc comment for handler.ts
- * @namespace handler.ts
+ * @packageDocumentation ip_handler.ts
  * GitHub Repository: {@link https://github.com/johnweland/ipblock-microservice}
  */
-
- /**
-  * FileType for custom typing
-  * @typeDef
-  */
-type FireHolFile = {
-  path: string;
-  mode: string;
-  type: string;
-  sha: string;
-  size: number;
-  url: string;
-}
 
 /**
  * Primary function for comparing input/request IP to a list of blocked IPSets from Firehol
@@ -37,7 +23,7 @@ export const ipcheck: APIGatewayProxyHandler = async (event, _context) => {
     if (!valid) {
       throw new Error(`invalid IP address ${ip}`);
     }
-    let blocked = await getData(ip);
+    let blocked = await queryDynamoDB(ip);
     let telemetry = await getTelemetry(ip);
     let message = `The IP address ${ip}`;
     blocked.Items.length
@@ -52,9 +38,13 @@ export const ipcheck: APIGatewayProxyHandler = async (event, _context) => {
             ip,
             telemetry: JSON.parse(telemetry),
             found: blocked.Items.length ? true : false,
-            ipset: blocked.Items.length ? `https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/${blocked.Items[0].ipset_filename}` : null
+            ipset: blocked.Items.length
+              ? `https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/${
+                blocked.Items[0].ipset_filename
+              }`
+              : null,
           },
-          request_origin: origin
+          request_origin: origin,
         },
         null,
         2,
@@ -81,7 +71,7 @@ export const ipcheck: APIGatewayProxyHandler = async (event, _context) => {
  * @throws  {InValidArgumentException} Invalid IP Address
  * @return  {object}  IP and origin
  */
-export const evaluateRequest = (request:APIGatewayEvent) => {
+export const evaluateRequest = (request: APIGatewayEvent) => {
   let ip: string = null;
   let requestOrigin: string = null;
   if (
@@ -116,8 +106,8 @@ export const evaluateRequest = (request:APIGatewayEvent) => {
     ip,
     origin: {
       ip: requestOrigin,
-      country: request.headers['CloudFront-Viewer-Country'],
-      userAgent: request.headers['User-Agent']
+      country: request.headers["CloudFront-Viewer-Country"],
+      userAgent: request.headers["User-Agent"],
     },
   };
 };
@@ -132,7 +122,9 @@ export const validateIp = (ip) => {
   let ipV4: boolean = new RegExp(
     /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/,
   ).test(ip);
-  let ipV6: boolean = new RegExp(/^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/).test(
+  let ipV6: boolean = new RegExp(
+    /^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/,
+  ).test(
     ip,
   );
   if (!ipV4 && !ipV6) {
@@ -141,18 +133,17 @@ export const validateIp = (ip) => {
   return true;
 };
 
-
 /**
  * Get telemerty data of an IP address
  * @param {string} ip IP address
  * 
  * @return {string} stringified JSON of Telemetry data
  */
-export const getTelemetry = async (ip:string) => {
+export const getTelemetry = async (ip: string) => {
   let telemetry = await geoip.lookup(ip);
 
   if (telemetry) {
-    return JSON.stringify(telemetry);                                                                
-  }  
+    return JSON.stringify(telemetry);
+  }
   return JSON.stringify("no telemetry data found");
-}
+};

@@ -51,18 +51,18 @@ const serverlessConfiguration: AWS = {
     ],
   },
   functions: {
-    dynamo: {
-      handler: "dynamo_handler.parseData",
+    s3: {
+      handler: "s3_handler.buildData",
       events: [
         {
           schedule: {
             rate: "rate(1 day)",
           },
         },
-      ],
+      ]
     },
-    ipcheck: {
-      handler: "ip_handler.ipcheck",
+    gateway: {
+      handler: "gateway_handler.ipcheck",
       events: [
         {
           http: {
@@ -107,8 +107,8 @@ const serverlessConfiguration: AWS = {
             }
           ],
           ProvisionedThroughput: {
-            ReadCapacityUnits: 1,
-            WriteCapacityUnits: 1,
+            ReadCapacityUnits: 5,
+            WriteCapacityUnits: 5,
           },
           TableName: DYNAMODB_TABLE,
         },
