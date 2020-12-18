@@ -61,6 +61,16 @@ const serverlessConfiguration: AWS = {
         },
       ]
     },
+    dynamodb: {
+      handler: "dynamo_handler.updateDynamoDB",
+      events: [
+        {
+          schedule: {
+            rate: "rate(1 day)",
+          },
+        },
+      ]
+    },
     gateway: {
       handler: "gateway_handler.ipcheck",
       events: [
