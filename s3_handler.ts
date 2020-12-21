@@ -1,6 +1,6 @@
 import { S3 } from "aws-sdk";
 import fetch from "node-fetch";
-import { itemObject, updateDynamoDB} from './dynamo_handler';
+import { itemObject, updateDynamoDB } from "./dynamo_handler";
 
 /**
  * This is the doc comment for s3_handler.ts
@@ -20,9 +20,7 @@ export interface FireHolFile {
   sha: string;
   size: number;
   url: string;
-};
-
-/**
+}/**
  * Takes in an array of objects [{ip_address, ipset_filename}]
  * Writes to a json file and puts it in an S3 bucket.
  * 
@@ -30,6 +28,7 @@ export interface FireHolFile {
  * 
  * @returns {Promise}
  */
+
 export const uploadS3 = async (rows) => {
   if (!rows.length) {
     console.error("No rows to reference");
@@ -107,11 +106,13 @@ export const buildData = async () => {
     for (let i: number = 0, n: number = lists.length; i < n; ++i) {
       let lines: string[] = await readIPset(lists[i]);
       for (let x: number = 0, y: number = lines.length; x < y; ++x) {
-        let item: itemObject = {
-          ip_address: lines[x],
-          ipset_filename: lists[i].path,
-        };
-        items.push(item);
+        if (lines[x] !== "" && lines[x] !== " ") {
+          let item: itemObject = {
+            ip_address: lines[x],
+            ipset_filename: lists[i].path,
+          };
+          items.push(item);
+        }
       }
     }
     // removing duplicate IP's that live in other files. 1/2 the file size
@@ -121,10 +122,11 @@ export const buildData = async () => {
         return c;
       }, {}),
     );
+    console.log("ROWS ", output.length);
     let success = await uploadS3(output);
     if (success) {
-        updateDynamoDB();
-        return;
+      updateDynamoDB();
+      return;
     }
   } catch (err) {
     console.error(err);
